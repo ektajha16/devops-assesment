@@ -107,3 +107,45 @@ resource "aws_instance" "prod-web-server-1" {
     Name = "prod-web-servers-1"
  }
 }
+
+/* create LB and attach to EC2 */
+
+
+resource "aws_elb" "devops-asses" {
+  name               = "devops-asses-terraform-elb"
+  availability_zones = ["us-west-2a", "us-west-2b"]
+
+
+  listener {
+    instance_port     = 8080
+    instance_protocol = "http"
+    lb_port           = 80
+    lb_protocol       = "http"
+  }
+
+  listener {
+    instance_port      = 8080
+    instance_protocol  = "http"
+    lb_port            = 443
+    lb_protocol        = "https"
+    ssl_certificate_id = "arn:aws:iam::123456789012:server-certificate/certName"
+  }
+
+  health_check {
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    timeout             = 3
+    target              = "HTTP:8080/"
+    interval            = 30
+  }
+
+  instances                   = [aws_instance.prod-web-server-1.id]
+  cross_zone_load_balancing   = true
+  idle_timeout                = 400
+  connection_draining         = true
+  connection_draining_timeout = 400
+
+  tags = {
+    Name = "devops-asses-terraform-elb"
+  }
+}
